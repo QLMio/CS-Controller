@@ -37,8 +37,12 @@
     <string name="string_performance_mode">性能模式</string>
     <string name="string_fast_mode">极速模式</string>
     <string name="string_super_powersave_mode">超级省电</string>
-
     <string name="string_app_list_config">配置应用</string>
+
+    <string name="about_mw_cpuspeedcontroller">CS调度</string>
+    <string name="about_cs_ontroller">CS-Controller</string>
+    
+
     <string-array name="modes">
         <item>powersave</item>
         <item>balance</item>

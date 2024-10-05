@@ -1,14 +1,13 @@
 package io.github.xsheeee.cs_controller;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import androidx.appcompat.widget.Toolbar;
 import android.widget.Spinner;
-import android.widget.TextView;
 
 import com.topjohnwu.superuser.Shell;
 import com.topjohnwu.superuser.ipc.RootService;
@@ -26,20 +25,27 @@ public class AppConfigActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_app_config);
-        // 初始化 backButton
-        TextView back = findViewById(R.id.backButton2);
-        back.setOnClickListener(new View.OnClickListener() {
+
+        // 初始化 Toolbar
+        Toolbar toolbar = findViewById(R.id.backButton2);
+        setSupportActionBar(toolbar);
+        
+        toolbar.setNavigationIcon(R.drawable.ic_back);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 finish(); // 返回上一个活动
             }
         });
 
+        // 获取应用名称并设置到 Toolbar 的副标题
+        Intent intent = getIntent();
+        String aName = intent.getStringExtra("aName");
+        toolbar.setSubtitle(aName); // 设置副标题为应用名称
+
         // 初始化 Spinner
         spinner = findViewById(R.id.spinner);
 
-        Intent intent = getIntent();
-        String aName = intent.getStringExtra("aName");
         String pName = intent.getStringExtra("pName");
 
         // 创建 ArrayAdapter
@@ -73,7 +79,6 @@ public class AppConfigActivity extends AppCompatActivity {
 
                 // 从旧列表移除并添加到新列表
                 removeAndAddToNewList(pName, position);
-
                 Values.toUpdateLists();
             }
 

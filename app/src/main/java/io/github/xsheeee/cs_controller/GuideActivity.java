@@ -19,12 +19,12 @@ public class GuideActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_guide);
         Tools ts = new Tools(getApplicationContext());
-        ts.showToast(String.valueOf(android.os.Process.myPid()));
+//        ts.showToast(String.valueOf(android.os.Process.myPid()));
         if(!ts.getSU())finish();
 //        readFileContent();
 //        ts.showToast(SetOOM.doit()?"true":"false");
         SetOOM.doit();
-        ts.showToast(String.valueOf(android.os.Process.myPid()));
+//        ts.showToast(String.valueOf(android.os.Process.myPid()));
         ts.init();
 
 //        ts.showToast("01");

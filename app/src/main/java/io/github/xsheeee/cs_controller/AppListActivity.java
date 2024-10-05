@@ -1,7 +1,6 @@
 package io.github.xsheeee.cs_controller;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -11,90 +10,87 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
-
+import androidx.appcompat.widget.Toolbar;
 import java.util.ArrayList;
 import java.util.List;
 
 import io.github.xsheeee.cs_controller.Tools.AppInfo;
 import io.github.xsheeee.cs_controller.Tools.Logger;
-import io.github.xsheeee.cs_controller.Tools.Tools;
 
 public class AppListActivity extends AppCompatActivity {
-    private ListView listView;
-    private AppListActivity.AppListAdapter adapter;
-    private PackageManager pm;
-    private android.widget.ListView lv_app;
-    private List<AppInfo> data;
+    private ListView listView; 
+    private AppListAdapter adapter;
+    private List<AppInfo> data; 
+    private View loadingView; 
+    private PackageManager packageManager; 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_app_list);
-        listView = findViewById(R.id.list_view);
 
-        data = getAllAppInfos();
-        adapter = new AppListAdapter();
-        //显示列表
-        listView.setAdapter(adapter);
-        Tools tools = new Tools(getApplicationContext());
-        TextView back = findViewById(R.id.backButton);
-        back.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                AppInfo appInfo = data.get(position);
-                String packageName = appInfo.getPackageName();
-                String appName = appInfo.getAppName();
-                // Handle click event here
-//                tools.showToast(appName + ":" +
-//                        "" + packageName);
-                Intent intent=new Intent(AppListActivity.this, AppConfigActivity.class);
-                intent.putExtra("aName",appName);
-                intent.putExtra("pName",packageName);
-                startActivity(intent);
-            }
+        // 初始化视图组件
+        listView = findViewById(R.id.list_view);
+        loadingView = findViewById(R.id.loading_view);
+        packageManager = getPackageManager();
+
+        // 加载应用信息
+        loadAppInfos();
+
+        // 设置Toolbar
+        Toolbar toolbar = findViewById(R.id.backButton);
+        setSupportActionBar(toolbar);
+        toolbar.setNavigationIcon(R.drawable.ic_back);
+        toolbar.setNavigationOnClickListener(v -> finish());
+
+        // 列表项点击事件
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            AppInfo appInfo = data.get(position);
+            Intent intent = new Intent(AppListActivity.this, AppConfigActivity.class);
+            intent.putExtra("aName", appInfo.getAppName());
+            intent.putExtra("pName", appInfo.getPackageName());
+            startActivity(intent);
         });
     }
-    protected List<AppInfo> getAllAppInfos() {
 
-        List<AppInfo> list = new ArrayList<AppInfo>();
-        // 得到应用的packgeManager
-        PackageManager packageManager = getPackageManager();
-        // 创建一个主界面的intent
-        Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_MAIN);
+    // 加载应用信息
+    private void loadAppInfos() {
+        loadingView.setVisibility(View.VISIBLE);
+
+        new Thread(() -> {
+            data = getAllAppInfos();
+            runOnUiThread(() -> {
+                adapter = new AppListAdapter();
+                listView.setAdapter(adapter);
+                loadingView.setVisibility(View.GONE);
+            });
+        }).start();
+    }
+
+    // 获取所有应用信息
+    protected List<AppInfo> getAllAppInfos() {
+        List<AppInfo> list = new ArrayList<>();
+        Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
-        // 得到包含应用信息的列表
-        List<ResolveInfo> ResolveInfos = packageManager.queryIntentActivities(
-                intent, 0);
-        // 遍历
-        for (ResolveInfo ri : ResolveInfos) {
-            // 得到包名
+        List<ResolveInfo> resolveInfos = packageManager.queryIntentActivities(intent, 0);
+
+        // 遍历应用信息
+        for (ResolveInfo ri : resolveInfos) {
             String packageName = ri.activityInfo.packageName;
-            // 得到图标
-            Drawable icon = ri.loadIcon(packageManager);
-            // 得到应用名称
+            Drawable icon = ri.loadIcon(packageManager); 
             String appName = ri.loadLabel(packageManager).toString();
-            // 封装应用信息对象
-            AppInfo appInfo = new AppInfo(icon, appName, packageName);
-            // 添加到list
-            list.add(appInfo);
+            list.add(new AppInfo(icon, appName, packageName));
         }
+
         return list;
     }
 
+    // 自定义适配器类
     class AppListAdapter extends BaseAdapter {
-
-
         @Override
         public int getCount() {
             return data.size();
@@ -107,31 +103,35 @@ public class AppListActivity extends AppCompatActivity {
 
         @Override
         public long getItemId(int position) {
-            // TODO Auto-generated method stub
-            return 0;
+            return position;
         }
 
-        //返回带数据当前行的Item视图对象
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-
-            //1. 如果convertView是null, 加载item的布局文件
+            ViewHolder holder;
             if (convertView == null) {
-                Logger.writeLog("Info", "getView() load layout");
                 convertView = View.inflate(AppListActivity.this, R.layout.app_info_layout, null);
+                holder = new ViewHolder();
+                holder.imageView = convertView.findViewById(R.id.app_icon);
+                holder.textView = convertView.findViewById(R.id.app_name);
+                holder.packageNameView = convertView.findViewById(R.id.pck_name);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
             }
-            //2. 得到当前行数据对象
+
             AppInfo appInfo = data.get(position);
-            //3. 得到当前行需要更新的子View对象
-            ImageView imageView = (ImageView) convertView.findViewById(R.id.app_icon);
-            TextView textView = (TextView) convertView.findViewById(R.id.app_name);
-            TextView tv = (TextView) convertView.findViewById(R.id.pck_name);
-            //4. 给视图设置数据
-            imageView.setImageDrawable(appInfo.getIcon());
-            textView.setText(appInfo.getAppName());
-            tv.setText(appInfo.getPackageName());
-            //返回convertView
+            holder.imageView.setImageDrawable(appInfo.getIcon());
+            holder.textView.setText(appInfo.getAppName());
+            holder.packageNameView.setText(appInfo.getPackageName());
+
             return convertView;
         }
+    }
+
+    static class ViewHolder {
+        ImageView imageView;
+        TextView textView;
+        TextView packageNameView; 
     }
 }
