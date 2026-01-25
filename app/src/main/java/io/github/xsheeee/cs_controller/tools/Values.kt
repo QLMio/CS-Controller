@@ -1,13 +1,13 @@
 package io.github.xsheeee.cs_controller.tools
 
 object Values {
-    const val processName: String = "MW_CpuSpeedController"
-    const val CSConfigPath: String = "/storage/emulated/0/Android/MW_CpuSpeedController/config.txt"
+    const val processName: String = "CTS"  // 新版CTS可能使用不同的进程名，暂时保留原值
+    const val CSConfigPath: String = "/sdcard/Android/CTS/mode.txt"  // 情景模式文件
     const val CSCPath: String = "/sdcard/Android/CSController/"
     const val csmodulePath: String = "/data/adb/modules/MW_CpuTurboScheduler/module.prop"
-    const val csLog: String = "/storage/emulated/0/Android/MW_CpuSpeedController/log.txt"
+    const val csLog: String = "/sdcard/Android/CTS/log.txt"  // 日志文件
     const val csSettingsPath: String =
-        "/storage/emulated/0/Android/MW_CpuSpeedController/config.ini"
+        "/sdcard/Android/CTS/config.json"  // JSON配置文件
     const val appConfig: String = "/storage/emulated/0/Android/CSController/app_config.json"
     const val CsServicePath: String = "/data/adb/modules/MW_CpuTurboScheduler/service.sh"
     const val balanceName: String = "balance"

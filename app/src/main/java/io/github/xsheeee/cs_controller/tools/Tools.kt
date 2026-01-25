@@ -5,6 +5,7 @@ import com.topjohnwu.superuser.Shell
 import io.github.xsheeee.cs_controller.tools.Logger.writeLog
 import io.github.xsheeee.cs_controller.tools.Logger.showToast
 import io.github.xsheeee.cs_controller.tools.Values.processName
+import org.json.JSONObject
 
 class Tools(private val context: Context) {
     fun getModeName(mode: Int): String? {
@@ -51,15 +52,53 @@ class Tools(private val context: Context) {
             return
         }
 
-        var updatedContent = content.replace(
-            ("(?m)^$key =.*$").toRegex(),
-            "$key = $newValue"
-        )
-        if (!updatedContent.contains("$key =")) {
-            updatedContent += "\n$key = $newValue"
+        try {
+            // 解析为JSON
+            val jsonObject = JSONObject(content)
+            
+            // 更新JSON中的值
+            val booleanValue = when (newValue.lowercase()) {
+                "true" -> true
+                "false" -> false
+                else -> {
+                    // 如果不是布尔值，保持为字符串
+                    jsonObject.put(key, newValue)
+                    writeJsonToFile(filePath, jsonObject)
+                    return
+                }
+            }
+            
+            jsonObject.put(key, booleanValue)
+            writeJsonToFile(filePath, jsonObject)
+            
+        } catch (e: Exception) {
+            // JSON解析失败，直接创建新的JSON配置
+            createNewJsonConfig(filePath, key, newValue)
         }
-
-        writeToFile(filePath, updatedContent.trim { it <= ' ' })
+    }
+    
+    private fun writeJsonToFile(filePath: String, jsonObject: JSONObject) {
+        val jsonString = jsonObject.toString(2) // 使用2个空格缩进
+        writeToFile(filePath, jsonString)
+    }
+    
+    private fun createNewJsonConfig(filePath: String, key: String, newValue: String) {
+        try {
+            val jsonObject = JSONObject()
+            val booleanValue = when (newValue.lowercase()) {
+                "true" -> true
+                "false" -> false
+                else -> {
+                    jsonObject.put(key, newValue)
+                    writeJsonToFile(filePath, jsonObject)
+                    return
+                }
+            }
+            jsonObject.put(key, booleanValue)
+            writeJsonToFile(filePath, jsonObject)
+        } catch (e: Exception) {
+            showToast(context,"创建JSON配置失败: ${e.message}")
+        }
     }
 
     private fun writeToFile(filePath: String, content: String) {

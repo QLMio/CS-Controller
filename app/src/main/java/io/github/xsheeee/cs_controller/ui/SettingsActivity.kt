@@ -185,28 +185,60 @@ class SettingsActivity : BaseActivity() {
     private fun loadConfig() {
         configMap.clear()
         try {
-            BufferedReader(FileReader(CONFIG_FILE_PATH)).use { reader ->
-                var line: String
-                var inFunctionSection = false
-                while ((reader.readLine().also { line = it }) != null) {
-                    line = line.trim()
-                    if (line == "[function]") {
-                        inFunctionSection = true
-                        continue
-                    } else if (line.startsWith("[") && line != "[function]") {
-                        inFunctionSection = false
-                        continue
+            val file = File(CONFIG_FILE_PATH)
+            if (!file.exists()) {
+                // 如果文件不存在，创建默认的JSON配置
+                createDefaultConfig()
+                return
+            }
+            
+            val jsonContent = file.readText()
+            val jsonObject = JSONObject(jsonContent)
+            
+            // 遍历JSON对象的所有键
+            val keys = jsonObject.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                val value = jsonObject.opt(key)
+                
+                // 只处理布尔值
+                if (value is Boolean) {
+                    configMap[key] = value
+                } else if (value is String) {
+                    // 尝试将字符串转换为布尔值
+                    val lowerValue = value.lowercase(Locale.getDefault())
+                    if (lowerValue == "true" || lowerValue == "false") {
+                        configMap[key] = lowerValue.toBoolean()
                     }
-                    if (inFunctionSection && line.contains("=")) {
-                        val parts = line.split("=".toRegex(), limit = 2).toTypedArray()
-                        val key = parts[0].trim()
-                        val value = parts[1].trim().lowercase(Locale.getDefault()).toBoolean()
-                        configMap[key] = value
-                    }
+                } else if (value is Int) {
+                    // 将1/0转换为布尔值
+                    configMap[key] = value == 1
                 }
             }
         } catch (e: Exception) {
             Logger.showToast(this@SettingsActivity, getString(R.string.read_mode_error) + ": " + e.message)
+            // JSON解析失败，不进行INI回退
+        }
+    }
+    
+    private fun createDefaultConfig() {
+        try {
+            val defaultConfig = JSONObject()
+            // 添加一些默认的配置项
+            defaultConfig.put("enable_logging", true)
+            defaultConfig.put("auto_start", false)
+            defaultConfig.put("show_notification", true)
+            
+            val file = File(CONFIG_FILE_PATH)
+            file.parentFile?.mkdirs()
+            file.writeText(defaultConfig.toString(2))
+            
+            // 将默认配置添加到configMap
+            configMap["enable_logging"] = true
+            configMap["auto_start"] = false
+            configMap["show_notification"] = true
+        } catch (e: Exception) {
+            Logger.e("SettingsActivity", "创建默认配置失败: ${e.message}")
         }
     }
 
