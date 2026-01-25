@@ -23,12 +23,10 @@ import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.File
-import java.io.FileReader
-import java.io.FileWriter
 import java.io.InputStreamReader
+import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.Locale
 
 class SettingsActivity : BaseActivity() {
 
@@ -117,8 +115,6 @@ class SettingsActivity : BaseActivity() {
             startActivity(intent)
         }
 
-
-
         loadTranslationsFromPreferences()
         reorderKeys()
 
@@ -168,78 +164,45 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
-
-
-//    private fun executeRootCommand(command: String) {
-//        try {
-//            val process = Runtime.getRuntime().exec("su")
-//            val writer = BufferedWriter(OutputStreamWriter(process.outputStream))
-//            writer.write(command)
-//            writer.flush()
-//            writer.close()
-//            process.waitFor()
-//        } catch (e: Exception) {
-//            showToast("ERROR" + e.message)
-//        }
-//    }
-
     private fun loadConfig() {
         configMap.clear()
         try {
             val file = File(CONFIG_FILE_PATH)
             if (!file.exists()) {
-                // 如果文件不存在，创建默认的JSON配置
-                createDefaultConfig()
+                showToast("配置文件不存在")
                 return
             }
             
             val jsonContent = file.readText()
-            val jsonObject = JSONObject(jsonContent)
+            val rootObject = JSONObject(jsonContent)
             
-            // 遍历JSON对象的所有键
-            val keys = jsonObject.keys()
-            while (keys.hasNext()) {
-                val key = keys.next()
-                val value = jsonObject.opt(key)
+            // 只读取 Function 节点下的 Boolean 类型的 enable 字段
+            if (rootObject.has("Function")) {
+                val functionObject = rootObject.getJSONObject("Function")
+                val keys = functionObject.keys()
                 
-                // 只处理布尔值
-                if (value is Boolean) {
-                    configMap[key] = value
-                } else if (value is String) {
-                    // 尝试将字符串转换为布尔值
-                    val lowerValue = value.lowercase(Locale.getDefault())
-                    if (lowerValue == "true" || lowerValue == "false") {
-                        configMap[key] = lowerValue.toBoolean()
+                while (keys.hasNext()) {
+                    val functionName = keys.next()
+                    val functionConfig = functionObject.opt(functionName)
+                    
+                    // 检查是否是 JSONObject 且包含 enable 字段
+                    if (functionConfig is JSONObject && functionConfig.has("enable")) {
+                        val enableValue = functionConfig.opt("enable")
+                        
+                        // 只处理 Boolean 类型的 enable 字段
+                        if (enableValue is Boolean) {
+                            configMap[functionName] = enableValue
+                        }
                     }
-                } else if (value is Int) {
-                    // 将1/0转换为布尔值
-                    configMap[key] = value == 1
                 }
             }
-        } catch (e: Exception) {
-            Logger.showToast(this@SettingsActivity, getString(R.string.read_mode_error) + ": " + e.message)
-            // JSON解析失败，不进行INI回退
-        }
-    }
-    
-    private fun createDefaultConfig() {
-        try {
-            val defaultConfig = JSONObject()
-            // 添加一些默认的配置项
-            defaultConfig.put("enable_logging", true)
-            defaultConfig.put("auto_start", false)
-            defaultConfig.put("show_notification", true)
             
-            val file = File(CONFIG_FILE_PATH)
-            file.parentFile?.mkdirs()
-            file.writeText(defaultConfig.toString(2))
+            if (configMap.isEmpty()) {
+                showToast("未找到可用的功能开关")
+            }
             
-            // 将默认配置添加到configMap
-            configMap["enable_logging"] = true
-            configMap["auto_start"] = false
-            configMap["show_notification"] = true
         } catch (e: Exception) {
-            Logger.e("SettingsActivity", "创建默认配置失败: ${e.message}")
+            Logger.showToast(this@SettingsActivity, "读取配置失败: " + e.message)
         }
     }
 

@@ -1,7 +1,7 @@
 package io.github.xsheeee.cs_controller.tools
 
 object Values {
-    const val processName: String = "CTS"  // 新版CTS可能使用不同的进程名，暂时保留原值
+    const val processName: String = "CpuTurboScheduler"
     const val CSConfigPath: String = "/sdcard/Android/CTS/mode.txt"  // 情景模式文件
     const val CSCPath: String = "/sdcard/Android/CSController/"
     const val csmodulePath: String = "/data/adb/modules/MW_CpuTurboScheduler/module.prop"
